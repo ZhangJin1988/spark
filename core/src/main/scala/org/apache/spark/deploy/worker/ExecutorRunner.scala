@@ -151,6 +151,7 @@ private[spark] class ExecutorRunner(
         command.mkString("\"", "\" \"", "\""), "=" * 40)
 
       // Redirect its stdout and stderr to files
+      //分别重定向到本地工作目录的stdout文件和stderr文件
       val stdout = new File(executorDir, "stdout")
       stdoutAppender = FileAppender(process.getInputStream, stdout, conf)
 
@@ -160,9 +161,12 @@ private[spark] class ExecutorRunner(
 
       // Wait for it to exit; executor may exit with code 0 (when driver instructs it to shutdown)
       // or with nonzero exit code
+      //调用process的waitFor方法 启动excutor进程
       val exitCode = process.waitFor()
+      //executor执行完之后 拿到返回状态
       state = ExecutorState.EXITED
       val message = "Command exited with code " + exitCode
+      //向ExecutorRunner现场所属的Worker actor 发送ExecutorStateChanged消息
       worker ! ExecutorStateChanged(appId, execId, state, Some(message), Some(exitCode))
     } catch {
       case interrupted: InterruptedException => {

@@ -13,6 +13,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 这个一个借口
+ * 它负责为application与Spark集群进行通信
+ * 它会接收一个Spark Master的url 以及一个applicationDescription，和一个集群事件的监听器，以及
+ * 各种事件发生时监听器
  */
 
 package org.apache.spark.deploy.client
@@ -38,6 +42,9 @@ import org.apache.spark.util.{ActorLogReceive, Utils, AkkaUtils}
  * events occur.
  *
  * @param masterUrls Each url should look like spark://host:port.
+  *它是一个接口
+  * 它负责为application与spark集群进行通信
+  * 它会接收一个spark Master的url 以及 一个applicationDescription 和一个集群事件的监听器 以及各种事件发生时监听器
  */
 private[spark] class AppClient(
     actorSystem: ActorSystem,

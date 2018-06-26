@@ -50,6 +50,11 @@ import org.apache.spark.storage.BlockManagerId
  * SchedulerBackends synchronize on themselves when they want to send events here, and then
  * acquire a lock on us, so we need to make sure that we don't try to lock the backend while
  * we are holding a lock on ourselves.
+  * 1 底层通过操作一个SchedulerBackend 针对不同种类的cluster（standalone，yarn，mesos），调度task
+  * 2 它也可以通过使用一个LocalBackend 并且将isLocal参数设置为true 来在本地模式下工作
+  * 3 它负责处理一些通用的逻辑，比如说决定多个job的调度顺序，启动推测任务执行
+  * 4 客户端首先应该调用它的initialize（）方法 和 start（）方法 然后通过runTasks方法提交task sets
+  *
  */
 private[spark] class TaskSchedulerImpl(
     val sc: SparkContext,

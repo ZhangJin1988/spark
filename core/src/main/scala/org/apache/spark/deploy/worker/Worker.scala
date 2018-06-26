@@ -331,6 +331,7 @@ private[spark] class Worker(
       logInfo(s"Master with url $masterUrl requested this worker to reconnect.")
       registerWithMaster()
 
+
     case LaunchExecutor(masterUrl, appId, execId, appDesc, cores_, memory_) =>
       if (masterUrl != activeMasterUrl) {
         logWarning("Invalid Master (" + masterUrl + ") attempted to launch executor.")
@@ -390,14 +391,17 @@ private[spark] class Worker(
     case ExecutorStateChanged(appId, execId, state, message, exitStatus) =>
       master ! ExecutorStateChanged(appId, execId, state, message, exitStatus)
       val fullId = appId + "/" + execId
+      //如果executor状态是finished
       if (ExecutorState.isFinished(state)) {
         executors.get(fullId) match {
           case Some(executor) =>
             logInfo("Executor " + fullId + " finished with state " + state +
               message.map(" message " + _).getOrElse("") +
               exitStatus.map(" exitStatus " + _).getOrElse(""))
+            //将excutor从内存缓存中移除
             executors -= fullId
             finishedExecutors(fullId) = executor
+            //释放资源
             coresUsed -= executor.cores
             memoryUsed -= executor.memory
           case None =>
@@ -462,9 +466,15 @@ private[spark] class Worker(
         case _ =>
           logDebug(s"Driver $driverId changed state to $state")
       }
+      //driver执行完以后 DriverRunner线程会发送一个状态给worker
+      //然后worker实际上会将DriverStateChanged消息发送给master
+      //master会进行状态改变处理
       master ! DriverStateChanged(driverId, state, exception)
+      //然后 将driver从本地缓存移除
       val driver = drivers.remove(driverId).get
+      //加入完成队列
       finishedDrivers(driverId) = driver
+      //释放资源
       memoryUsed -= driver.driverDesc.mem
       coresUsed -= driver.driverDesc.cores
     }
