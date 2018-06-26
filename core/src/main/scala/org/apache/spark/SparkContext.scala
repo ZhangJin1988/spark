@@ -583,6 +583,11 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   /**
    * Read a text file from HDFS, a local file system (available on all nodes), or any
    * Hadoop-supported file system URI, and return it as an RDD of Strings.
+    * 首先 hadoopfile 方法的调用 会创建一个hadooprdd 其中的元素 其实就是 （key ，value） pair
+    * key是hdfs或文本的每一行的offset value就是文本行
+    * 然后对HadoopRDD调用map()方法 会剔除key 只保留value 然后会获得一个MapPartitionsRDD
+    * MapPartitonsRDD内部的元素 其实就是一行一行的文本行
+    *
    */
   def textFile(path: String, minPartitions: Int = defaultMinPartitions): RDD[String] = {
     assertNotStopped()
@@ -1465,6 +1470,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
    * handler function. This is the main entry point for all actions in Spark. The allowLocal
    * flag specifies whether the scheduler can run the computation on the driver rather than
    * shipping it out to the cluster, for short actions like first().
+    *
    */
   def runJob[T, U: ClassTag](
       rdd: RDD[T],
@@ -1481,6 +1487,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
     if (conf.getBoolean("spark.logLineage", false)) {
       logInfo("RDD's recursive dependencies:\n" + rdd.toDebugString)
     }
+    //调用SparkContext 之前初始化时创建的DAGScheduler的runJob(）方法
     dagScheduler.runJob(rdd, cleanedFunc, partitions, callSite, allowLocal,
       resultHandler, localProperties.get)
     progressBar.foreach(_.finishAll())
